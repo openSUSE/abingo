@@ -5,7 +5,7 @@
 
 class Abingo
 
-  @@VERSION = "1.0.0"
+  @@VERSION = "1.0.2"
   @@MAJOR_VERSION = "1.0"
   cattr_reader :VERSION
   cattr_reader :MAJOR_VERSION
@@ -19,6 +19,8 @@ class Abingo
 
   #Defined options:
   # :enable_specification  => if true, allow params[test_name] to override the calculated value for a test.
+  # :expires_in => if not nil, passes expire_in to creation of per-user cache keys.  Useful for Redis, to prevent expired sessions
+  #               from running wild and consuming all of your memory.
 
   #ABingo stores whether a particular user has participated in a particular
   #experiment yet, and if so whether they converted, in the cache.
@@ -73,17 +75,24 @@ class Abingo
     end
     
     unless Abingo::Experiment.exists?(test_name)
-      lock_key = test_name.gsub(" ", "_")
+      lock_key = "Abingo::lock_for_creation(#{test_name.gsub(" ", "_")})"
+      creation_required = true
+
+      #this prevents (most) repeated creations of experiments in high concurrency environments.
       if Abingo.cache.exist?(lock_key)
+        creation_required = false
         while Abingo.cache.exist?(lock_key)
           sleep(0.1)
         end
-        break
+        creation_required = Abingo::Experiment.exists?(test_name)
       end
-      Abingo.cache.write(lock_key, 1, :expires_in => 5.seconds)
-      conversion_name = options[:conversion] || options[:conversion_name]
-      Abingo::Experiment.start_experiment!(test_name, self.parse_alternatives(alternatives), conversion_name)
-      Abingo.cache.delete(lock_key)
+
+      if creation_required
+        Abingo.cache.write(lock_key, 1, :expires_in => 5.seconds)
+        conversion_name = options[:conversion] || options[:conversion_name]
+        Abingo::Experiment.start_experiment!(test_name, self.parse_alternatives(alternatives), conversion_name)
+        Abingo.cache.delete(lock_key)
+      end
     end
 
     choice = self.find_alternative_for_user(test_name, alternatives)
@@ -93,7 +102,11 @@ class Abingo
     if options[:multiple_participation] || !(participating_tests.include?(test_name))
       unless participating_tests.include?(test_name)
         participating_tests = participating_tests + [test_name]
-        Abingo.cache.write("Abingo::participating_tests::#{Abingo.identity}", participating_tests)
+        if (@@options[:expires_in])
+          Abingo.cache.write("Abingo::participating_tests::#{Abingo.identity}", participating_tests, {:expires_in => @@options[:expires_in]})
+        else
+          Abingo.cache.write("Abingo::participating_tests::#{Abingo.identity}", participating_tests)
+        end
       end
       Abingo::Alternative.score_participation(test_name)
     end
