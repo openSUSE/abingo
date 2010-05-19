@@ -2,28 +2,11 @@
 
 module AbingoViewHelper
 
-  def ab_test(test_name, alternatives = nil, options = {})
-    if (Abingo.options[:enable_specification] && !params[test_name].blank?)
-      choice = params[test_name]
-    elsif (Abingo.options[:enable_override_in_sesion] && !session[test_name].blank?)
-      choice = session[test_name]
-    elsif (alternatives.nil?)
-      choice = Abingo.flip(test_name)
-    else
-      choice = Abingo.test(test_name, alternatives, options)
-    end
-
-    if block_given?
-      yield(choice)
-    else
-      choice
-    end
-  end
-
   def ab_test(test_name, alternatives = nil, options = {}, &block)
-    if (Abingo.options[:enable_specification] && !params[test_name].blank?)
+
+    if (Abingo.options[:enable_specification] && !params[test_name].nil?)
       choice = params[test_name]
-    elsif (Abingo.options[:enable_override_in_sesion] && !session[test_name].blank?)
+    elsif (Abingo.options[:enable_override_in_session] && !session[test_name].nil?)
       choice = session[test_name]
     elsif (alternatives.nil?)
       choice = Abingo.flip(test_name)
