@@ -19,6 +19,7 @@ class Abingo
 
   #Defined options:
   # :enable_specification  => if true, allow params[test_name] to override the calculated value for a test.
+  # :enable_override_in_sesion => if true, allows session[test_name] to override the calculated value for a test.
   # :expires_in => if not nil, passes expire_in to creation of per-user cache keys.  Useful for Redis, to prevent expired sessions
   #               from running wild and consuming all of your memory.
 

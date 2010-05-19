@@ -5,6 +5,8 @@ module AbingoViewHelper
   def ab_test(test_name, alternatives = nil, options = {})
     if (Abingo.options[:enable_specification] && !params[test_name].blank?)
       choice = params[test_name]
+    elsif (Abingo.options[:enable_override_in_sesion] && !session[test_name].blank?)
+      choice = session[test_name]
     elsif (alternatives.nil?)
       choice = Abingo.flip(test_name)
     else
@@ -21,6 +23,8 @@ module AbingoViewHelper
   def ab_test(test_name, alternatives = nil, options = {}, &block)
     if (Abingo.options[:enable_specification] && !params[test_name].blank?)
       choice = params[test_name]
+    elsif (Abingo.options[:enable_override_in_sesion] && !session[test_name].blank?)
+      choice = session[test_name]
     elsif (alternatives.nil?)
       choice = Abingo.flip(test_name)
     else
