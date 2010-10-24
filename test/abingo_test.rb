@@ -132,4 +132,53 @@ class AbingoTest < ActiveSupport::TestCase
     sleep(10)
     assert_equal 1, Abingo::Experiment.count_by_sql(["select count(id) from experiments where test_name = ?", test_name])
   end
+
+  test "non-humans are ignored for participation and conversions if not explicitly counted" do
+    Abingo.options[:count_humans_only] = true
+    Abingo.options[:expires_in] = 1.hour
+    Abingo.options[:expires_in_for_bots] = 3.seconds
+    first_identity = Abingo.identity = "unsure_if_human#{Time.now.to_i}"
+    test_name = "are_you_a_human"
+    Abingo.test(test_name, %w{does_not matter})
+
+    assert_false Abingo.is_human?, "Identity not marked as human yet."
+
+    ex = Abingo::Experiment.find_by_test_name(test_name)
+    Abingo.bingo!(test_name)
+    assert_equal 0, ex.participants, "Not human yet, so should have no participants."
+    assert_equal 0, ex.conversions, "Not human yet, so should have no conversions."
+
+    Abingo.human!
+    
+    #Setting up second participant who doesn't convert.
+    Abingo.identity = "unsure_if_human_2_#{Time.now.to_i}"
+    Abingo.test(test_name, %w{does_not matter})
+    Abingo.human!
+
+    ex = Abingo::Experiment.find_by_test_name(test_name)
+    assert_equal 2, ex.participants, "Now that we're human, our participation should matter."
+    assert_equal 1, ex.conversions, "Now that we're human, our conversions should matter, but only one of us converted."
+  end
+
+  test "Participating tests for a given identity" do
+    Abingo.identity = "test_participant"
+    test_names = (1..3).map {|t| "participating_test_test_name #{t}"}
+    test_alternatives = %w{yes no}
+    test_names.each {|test_name| Abingo.test(test_name, test_alternatives)}
+    ex = Abingo::Experiment.last
+    ex.end_experiment!("no")  #End final of 3 tests, leaving 2 presently running
+
+    assert_equal 2, Abingo.participating_tests.size  #Pairs for two tests
+    Abingo.participating_tests.each do |key, value|
+      assert test_names.include? key
+      assert test_alternatives.include? value
+    end
+    
+    assert_equal 3, Abingo.participating_tests(false).size #pairs for three tests
+    Abingo.participating_tests(false).each do |key, value|
+      assert test_names.include? key
+      assert test_alternatives.include? value
+    end
+  end
+
 end
