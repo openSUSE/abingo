@@ -27,4 +27,23 @@ module AbingoSugar
     Abingo.bingo!(test_name, options)
   end
 
+  #Mark the user as a human.
+  def abingo_mark_human
+    textual_result = "1"
+    begin
+      a = params[:a].to_i
+      b = params[:b].to_i
+      c = params[:c].to_i
+      if (request.method == :post && (a + b == c))
+        Abingo.human!
+      else
+        textual_result = "0"
+      end
+    rescue #If a bot doesn't pass a, b, or c, to_i will fail.  This scarfs up the exception, to save it from polluting our logs.
+      textual_result = "0"
+    end
+    render :text => textual_result, :layout => false #Not actually used by browser
+
+  end
+
 end
