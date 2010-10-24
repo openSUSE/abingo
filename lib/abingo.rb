@@ -191,8 +191,6 @@ class Abingo
   #Marks that this user is human.
   def self.human!
     Abingo.cache.fetch("Abingo::is_human(#{Abingo.identity})",  {:expires_in => Abingo.expires_in(true)}) do
-
-
       #Now that we know the user is human, score participation for all their tests.  (Further participation will *not* be lazy evaluated.)
 
       #Score all tests which have been deferred.
