@@ -176,7 +176,8 @@ class Abingo
     identity = Abingo.identity
     participating_tests = Abingo.cache.read("Abingo::participating_tests::#{identity}") || []
     tests_and_alternatives = participating_tests.inject({}) do |acc, test_name|
-      alternatives = "Abingo::Experiment::#{test_name}::alternatives".gsub(" ","_")
+      alternatives_key = "Abingo::Experiment::#{test_name}::alternatives".gsub(" ","_")
+      alternatives = Abingo.cache.read(alternatives_key)
       acc[test_name] = Abingo.find_alternative_for_user(test_name, alternatives)
       acc
     end

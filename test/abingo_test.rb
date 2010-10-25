@@ -179,6 +179,9 @@ class AbingoTest < ActiveSupport::TestCase
       assert test_names.include? key
       assert test_alternatives.include? value
     end
+
+    Abingo.identity = "test_nonparticipant"
+    assert_equal({}, Abingo.participating_tests)
   end
 
 end
