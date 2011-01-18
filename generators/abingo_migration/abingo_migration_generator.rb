@@ -1,7 +1,5 @@
-require 'rails/generators'
 if Rails::VERSION::MAJOR == 2
   class AbingoMigrationGenerator < Rails::Generator::Base
-
     def manifest
       record do |m|
         m.migration_template 'abingo_migration.rb', 'db/migrate',
@@ -14,10 +12,11 @@ if Rails::VERSION::MAJOR == 2
     end
   end
 else
+  require 'rails/generators'
   require 'rails/generators/active_record'
   class AbingoMigrationGenerator < Rails::Generators::Base
     include Rails::Generators::Migration
-    
+
     source_root File.expand_path('../templates', __FILE__)
 
     def self.next_migration_number(dirname) #:nodoc:
