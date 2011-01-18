@@ -160,4 +160,28 @@ class AbingoTest < ActiveSupport::TestCase
     assert_equal 1, ex.conversions, "Now that we're human, our conversions should matter, but only one of us converted."
   end
 
+  test "Participating tests for a given identity" do
+    Abingo.identity = "test_participant"
+    test_names = (1..3).map {|t| "participating_test_test_name #{t}"}
+    test_alternatives = %w{yes no}
+    test_names.each {|test_name| Abingo.test(test_name, test_alternatives)}
+    ex = Abingo::Experiment.last
+    ex.end_experiment!("no")  #End final of 3 tests, leaving 2 presently running
+
+    assert_equal 2, Abingo.participating_tests.size  #Pairs for two tests
+    Abingo.participating_tests.each do |key, value|
+      assert test_names.include? key
+      assert test_alternatives.include? value
+    end
+    
+    assert_equal 3, Abingo.participating_tests(false).size #pairs for three tests
+    Abingo.participating_tests(false).each do |key, value|
+      assert test_names.include? key
+      assert test_alternatives.include? value
+    end
+
+    Abingo.identity = "test_nonparticipant"
+    assert_equal({}, Abingo.participating_tests)
+  end
+
 end

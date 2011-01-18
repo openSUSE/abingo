@@ -4,6 +4,7 @@ class Abingo::Experiment < ActiveRecord::Base
 
   has_many :alternatives, :dependent => :destroy, :class_name => "Abingo::Alternative"
   validates_uniqueness_of :test_name
+  before_destroy :cleanup_cache
 
   def cache_keys
   ["Abingo::Experiment::exists(#{test_name})".gsub(" ", "_"),
@@ -12,7 +13,7 @@ class Abingo::Experiment < ActiveRecord::Base
   ]
   end
   
-  def before_destroy
+  def cleanup_cache
     cache_keys.each do |key|
       Abingo.cache.delete key
     end
@@ -72,13 +73,17 @@ class Abingo::Experiment < ActiveRecord::Base
         cloned_alternatives_array -= [alt]
       end
       experiment.status = "Live"
-      experiment.save(false)  #Calling the validation here causes problems b/c of transaction.
+      if Rails::VERSION::MAJOR == 2
+        experiment.save(false)  #Calling the validation here causes problems b/c of transaction.
+      else
+        experiment.save(:validate => false)
+      end
       Abingo.cache.write("Abingo::Experiment::exists(#{test_name})".gsub(" ", "_"), 1)
 
       #This might have issues in very, very high concurrency environments...
 
       tests_listening_to_conversion = Abingo.cache.read("Abingo::tests_listening_to_conversion#{conversion_name}") || []
-      tests_listening_to_conversion << test_name unless tests_listening_to_conversion.include? test_name
+      tests_listening_to_conversion += [test_name] unless tests_listening_to_conversion.include? test_name
       Abingo.cache.write("Abingo::tests_listening_to_conversion#{conversion_name}", tests_listening_to_conversion)
       experiment
     end

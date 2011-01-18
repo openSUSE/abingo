@@ -172,11 +172,26 @@ class Abingo
     end
   end
 
+  def self.participating_tests(only_current = true)
+    identity = Abingo.identity
+    participating_tests = Abingo.cache.read("Abingo::participating_tests::#{identity}") || []
+    tests_and_alternatives = participating_tests.inject({}) do |acc, test_name|
+      alternatives_key = "Abingo::Experiment::#{test_name}::alternatives".gsub(" ","_")
+      alternatives = Abingo.cache.read(alternatives_key)
+      acc[test_name] = Abingo.find_alternative_for_user(test_name, alternatives)
+      acc
+    end
+    if (only_current)
+      tests_and_alternatives.reject! do |key, value|
+        self.cache.read("Abingo::Experiment::short_circuit(#{key})")
+      end
+    end
+    tests_and_alternatives
+  end
+
   #Marks that this user is human.
   def self.human!
-    Abingo.cache.fetch("Abingo::is_human(#{Abingo.identity})") do
-
-
+    Abingo.cache.fetch("Abingo::is_human(#{Abingo.identity})",  {:expires_in => Abingo.expires_in(true)}) do
       #Now that we know the user is human, score participation for all their tests.  (Further participation will *not* be lazy evaluated.)
 
       #Score all tests which have been deferred.
