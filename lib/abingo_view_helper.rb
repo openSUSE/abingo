@@ -16,7 +16,11 @@ module AbingoViewHelper
 
     if block
       content_tag = capture(choice, &block)
-      block_called_from_erb?(block) ? concat(content_tag) : content_tag
+      unless Rails::VERSION::MAJOR >= 3
+        block_called_from_erb?(block) ? concat(content_tag) : content_tag
+      else
+        content_tag
+      end
     else
       choice
     end
