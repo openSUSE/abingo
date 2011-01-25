@@ -20,8 +20,12 @@ if Rails::VERSION::MAJOR.to_i >= 3
 
   require 'rails/railtie'
 
+  #We need to load the whole Rails application to properly initialize Rails.cache and other constants.  Oh boy.
+  #We're going to parse it out of RAILS_PATH/config.ru using a little metaprogramming magic.
   require ::File.expand_path('../../../../../config/environment',  __FILE__)
-  Rails3test::Application.initialize! 
+  lines = File.open(::File.expand_path('../../../../../config.ru',  __FILE__)).readlines.select {|a| a =~ /::Application/}
+  application_name = lines.first[/[^ ]*::/].gsub(":", "")
+  Kernel.const_get(application_name).const_get("Application").initialize!
 else
   #Rails 2 testing
   require 'active_support'
