@@ -4,6 +4,7 @@ class Abingo::Experiment < ActiveRecord::Base
 
   has_many :alternatives, :dependent => :destroy, :class_name => "Abingo::Alternative"
   validates_uniqueness_of :test_name
+  attr_accessible :test_name
   before_destroy :cleanup_cache
 
   def cache_keys

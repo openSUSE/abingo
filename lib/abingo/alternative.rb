@@ -2,6 +2,7 @@ class Abingo::Alternative < ActiveRecord::Base
   include Abingo::ConversionRate
 
   belongs_to :experiment, :class_name => "Abingo::Experiment"
+  attr_accessible :content, :weight, :lookup
   serialize :content
 
   def self.calculate_lookup(test_name, alternative_name)
