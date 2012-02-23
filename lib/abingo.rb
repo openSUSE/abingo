@@ -303,3 +303,9 @@ class Abingo
   end
 
 end
+
+require 'abingo/statistics'
+require 'abingo/conversion_rate'
+require 'abingo/alternative'
+require 'abingo/experiment'
+require 'abingo/controller/dashboard'
